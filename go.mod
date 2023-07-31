@@ -3,16 +3,18 @@ module github.com/jerusj/dagger-pipeline-libs-go/v2
 go 1.20
 
 require (
-	dagger.io/dagger v0.5.2
-	golang.org/x/mod v0.9.0
-	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4
+	dagger.io/dagger v0.7.4
+	github.com/Masterminds/semver v1.5.0
+	golang.org/x/mod v0.12.0
+	golang.org/x/sync v0.3.0
 )
 
 require (
-	github.com/Khan/genqlient v0.5.0 // indirect
-	github.com/Masterminds/semver v1.5.0 // indirect
+	github.com/99designs/gqlgen v0.17.36 // indirect
+	github.com/Khan/genqlient v0.6.0 // indirect
 	github.com/adrg/xdg v0.4.0 // indirect
-	github.com/iancoleman/strcase v0.2.0 // indirect
-	github.com/vektah/gqlparser/v2 v2.5.1 // indirect
-	golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab // indirect
+	github.com/iancoleman/strcase v0.3.0 // indirect
+	github.com/vektah/gqlparser/v2 v2.5.8 // indirect
+	golang.org/x/sys v0.10.0 // indirect
+	golang.org/x/tools v0.11.0 // indirect
 )
