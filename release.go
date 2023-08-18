@@ -27,13 +27,19 @@ func RunSemanticRelease(repoDir *dagger.Directory, platform string, c *dagger.Cl
 		return
 	}
 
+	// TODO: use *dagger.Secret for token
 	token := os.Getenv(secretEnv)
 	if token == "" {
 		err = fmt.Errorf("ERROR: empty token for env var: %s", secretEnv)
 		return
 	}
 
-	// TODO: use *dagger.Secret for token
+	// Always release under CI
+	isDryRun := true
+	ciEnv := os.Getenv("CI")
+	if ciEnv != "" {
+		isDryRun = false
+	}
 
 	cSemantic := c.Container().From(ImageNode).
 		WithEntrypoint([]string{"sh", "-c"}).
@@ -50,10 +56,15 @@ func RunSemanticRelease(repoDir *dagger.Directory, platform string, c *dagger.Cl
 		WithMountedCache("/var/cache/apk", c.CacheVolume("apk_cache")).
 		WithMountedDirectory("/WORK/repo", repoDir).
 		WithEnvVariable(secretEnv, token).
+		WithEnvVariable("CI", ciEnv).
 		WithWorkdir("/WORK/repo")
 
 	// Run Release
-	_, err = cSemantic.WithExec([]string{"npx semantic-release"}).Stderr(ctx)
+	if isDryRun {
+		_, err = cSemantic.WithExec([]string{"npx semantic-release"}).Stderr(ctx)
+	} else {
+		_, err = cSemantic.WithExec([]string{"npx semantic-release --dry-run=false --debug"}).Stderr(ctx)
+	}
 
 	return
 }
