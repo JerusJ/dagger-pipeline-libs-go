@@ -44,7 +44,7 @@ func RunSemanticRelease(repoDir *dagger.Directory, platform string, c *dagger.Cl
 	cSemantic := c.Container().From(ImageNode).
 		WithEntrypoint([]string{"sh", "-c"}).
 		WithExec([]string{"apk update"}).
-		WithExec([]string{"apk add git"}).
+		WithExec([]string{"apk add git git-lfs"}).
 		WithExec([]string{"npm install -g semantic-release@latest"}).
 		WithExec([]string{"npm install -g @semantic-release/release-notes-generator@latest"}).
 		WithExec([]string{"npm install -g @semantic-release/npm@latest"}).
