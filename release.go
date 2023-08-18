@@ -8,6 +8,10 @@ import (
 	"dagger.io/dagger"
 )
 
+const (
+	ImageNode = "docker.io/node:20.5.1-alpine3.18"
+)
+
 // For config, see: https://github.com/semantic-release/semantic-release/blob/master/docs/usage/ci-configuration.md
 func RunSemanticRelease(repoDir *dagger.Directory, platform string, c *dagger.Client, ctx context.Context) (err error) {
 	secretEnv := ""
@@ -31,7 +35,7 @@ func RunSemanticRelease(repoDir *dagger.Directory, platform string, c *dagger.Cl
 
 	// TODO: use *dagger.Secret for token
 
-	cSemantic := c.Container().From("docker.io/node:20.5.1-alpine3.18").
+	cSemantic := c.Container().From(ImageNode).
 		WithEntrypoint([]string{"sh", "-c"}).
 		WithExec([]string{"apk update"}).
 		WithExec([]string{"apk add git"}).
