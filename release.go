@@ -49,7 +49,7 @@ func RunSemanticRelease(repoDir *dagger.Directory, platform string, c *dagger.Cl
 		WithWorkdir("/WORK/repo")
 
 	// Run Release
-	_, err = cSemantic.WithExec([]string{"npx semantic release"}).Stderr(ctx)
+	_, err = cSemantic.WithExec([]string{"npx semantic-release"}).Stderr(ctx)
 
 	return
 }
