@@ -1,4 +1,4 @@
-package main
+package pipeline
 
 import (
 	"context"
@@ -17,16 +17,16 @@ var (
 func main() {
 	if err := runPipelines(context.Background()); err != nil {
 		log.Fatal(err)
-    }
+	}
 }
 
 func runPipelines(ctx context.Context) (err error) {
-    // initialize Dagger client
-    c, err := dagger.Connect(ctx, dagger.WithLogOutput(os.Stderr))
-    if err != nil {
-        return
-    }
-    defer c.Close()
+	// initialize Dagger client
+	c, err := dagger.Connect(ctx, dagger.WithLogOutput(os.Stderr))
+	if err != nil {
+		return
+	}
+	defer c.Close()
 
 	eg, gctx := errgroup.WithContext(ctx)
 

@@ -1,4 +1,4 @@
-package main
+package pipeline
 
 import (
 	"context"
@@ -11,7 +11,6 @@ import (
 	"golang.org/x/mod/semver"
 	"golang.org/x/sync/errgroup"
 )
-
 
 func GetGitTags(repoURL, destDir string, container *dagger.Container, c *dagger.Client, ctx context.Context) (tags []string, err error) {
 	cloneRoot := "/REPOS"
@@ -101,12 +100,12 @@ func BuildK8SUtils(c *dagger.Client, ctx context.Context) (err error) {
 	baseContainer = baseContainer.
 		WithMountedDirectory("/download", c.Directory()).
 		WithExec([]string{
-		"apk", "add",
-		"curl",
-		"tar",
-		"zip",
-		"unzip",
-	})
+			"apk", "add",
+			"curl",
+			"tar",
+			"zip",
+			"unzip",
+		})
 
 	for _, tag := range sameTags[len(sameTags)-5:] {
 		_, err = buildK8SUtil(tag, vKustomize, vHelm, baseContainer, c, ctx)
@@ -115,38 +114,37 @@ func BuildK8SUtils(c *dagger.Client, ctx context.Context) (err error) {
 		}
 	}
 
-  return
+	return
 }
-
 
 type ContainerBuilder struct {
-	URL string
+	URL          string
 	CheckCommand []string
 }
+
 func buildK8SUtil(vK8S, vKustomize, vHelm string, baseContainer *dagger.Container, c *dagger.Client, ctx context.Context) (container *dagger.Container, err error) {
 	binPath := "/usr/local/bin"
 	containerBuilds := []ContainerBuilder{
 		{
-			URL: fmt.Sprintf("https://dl.k8s.io/release/%s/bin/linux/amd64/kubectl", vK8S),
+			URL:          fmt.Sprintf("https://dl.k8s.io/release/%s/bin/linux/amd64/kubectl", vK8S),
 			CheckCommand: []string{"kubectl", "version", "--client"},
 		},
 		{
-			URL: "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2F" + fmt.Sprintf("%s/kustomize_%s_linux_amd64.tar.gz", vKustomize, vKustomize),
+			URL:          "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2F" + fmt.Sprintf("%s/kustomize_%s_linux_amd64.tar.gz", vKustomize, vKustomize),
 			CheckCommand: []string{"kustomize", "version"},
 		},
 		{
 
-			URL: fmt.Sprintf("https://get.helm.sh/helm-%s-linux-amd64.tar.gz", vHelm),
+			URL:          fmt.Sprintf("https://get.helm.sh/helm-%s-linux-amd64.tar.gz", vHelm),
 			CheckCommand: []string{"helm", "version"},
 		},
 	}
-
 
 	container = baseContainer.WithEntrypoint([]string{})
 	for _, build := range containerBuilds {
 		fName := filepath.Base(build.URL)
 		ext := filepath.Ext(build.URL)
-		tmpDest:= filepath.Join("/download", fName)
+		tmpDest := filepath.Join("/download", fName)
 
 		switch {
 		case ext == ".gz":
@@ -158,12 +156,11 @@ func buildK8SUtil(vK8S, vKustomize, vHelm string, baseContainer *dagger.Containe
 			err = fmt.Errorf("Unsupported container extension: %s", ext)
 		}
 
-		_, err = container.WithExec(build.CheckCommand).ExitCode(ctx)
+		_, err = container.WithExec(build.CheckCommand).Stderr(ctx)
 		if err != nil {
 			return container, err
 		}
 	}
-
 
 	return
 }
