@@ -8,6 +8,8 @@ import (
 
 	"dagger.io/dagger"
 	"golang.org/x/sync/errgroup"
+
+	pipeline "github.com/jerusj/dagger-pipeline-libs-go/v2"
 )
 
 var (
@@ -44,7 +46,7 @@ func runPipelines(ctx context.Context) (err error) {
 	if *flagRelease || *flagAll {
 		repoDir := c.Host().Directory(".", dagger.HostDirectoryOpts{Include: []string{".git", ".releaserc.json"}})
 		eg.Go(func() error {
-			return RunSemanticRelease(repoDir, "github", c, gctx)
+			return pipeline.RunSemanticRelease(repoDir, "github", c, gctx)
 		})
 	}
 
@@ -55,7 +57,7 @@ func runContainerPipeline(c *dagger.Client, ctx context.Context) (err error) {
 	eg, gctx := errgroup.WithContext(ctx)
 
 	eg.Go(func() error {
-		return BuildK8SUtils(c, gctx)
+		return pipeline.BuildK8SUtils(c, gctx)
 	})
 
 	return eg.Wait()
