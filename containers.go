@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"dagger.io/dagger"
-	msemver "github.com/Masterminds/semver"
 	"golang.org/x/mod/semver"
 	"golang.org/x/sync/errgroup"
 )
@@ -86,16 +85,10 @@ func BuildK8SUtils(c *dagger.Client, ctx context.Context) (err error) {
 	for _, k8sTag := range k8sTags {
 		for _, ocpTag := range openshiftTags {
 			if k8sTag == ocpTag {
-				k8sSemver := msemver.MustParse(ocpTag)
-				fmt.Printf("%+v\n", k8sSemver)
 				sameTags = append(sameTags, ocpTag)
 			}
 		}
 	}
-
-	log.Println("Openshift Tags:", openshiftTags)
-	log.Println("K8S Tags:", k8sTags)
-	log.Println("Same Tags:", sameTags)
 
 	baseContainer = baseContainer.
 		WithMountedDirectory("/download", c.Directory()).
@@ -107,6 +100,7 @@ func BuildK8SUtils(c *dagger.Client, ctx context.Context) (err error) {
 			"unzip",
 		})
 
+	log.Println("Matching OpenShift/Kubernetes upstream tags:", sameTags)
 	for _, tag := range sameTags[len(sameTags)-5:] {
 		_, err = buildK8SUtil(tag, vKustomize, vHelm, baseContainer, c, ctx)
 		if err != nil {
