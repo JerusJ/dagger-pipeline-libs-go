@@ -10,27 +10,27 @@ import (
 
 // For config, see: https://github.com/semantic-release/semantic-release/blob/master/docs/usage/ci-configuration.md
 func RunSemanticRelease(repoDir *dagger.Directory, platform string, c *dagger.Client, ctx context.Context) (err error) {
-	imageNode := "docker.io/node:20.5.1-alpine3.18"
+	imageNode := "docker.io/node:20.6.1-alpine3.18"
 	npmPkgs := []string{
-		"semantic-release@latest",
-		"semantic-release/release-notes-generator@latest",
-		"semantic-release/npm@latest",
-		"semantic-release/exec@latest",
-		"semantic-release/changelog@latest",
-		"semantic-release/git@latest",
+		"semantic-release@v22.0.0",
+		"@semantic-release/release-notes-generator@latest",
+		"@semantic-release/npm@latest",
+		"@semantic-release/exec@latest",
+		"@semantic-release/changelog@latest",
+		"@semantic-release/git@latest",
 	}
 
 	secretEnv := ""
 	switch platform {
 	case "github":
 		secretEnv = "GITHUB_TOKEN"
-		npmPkgs = append(npmPkgs, "semantic-release/github@latest")
+		npmPkgs = append(npmPkgs, "@semantic-release/github@latest")
 	case "gitlab":
 		secretEnv = "GITLAB_TOKEN"
-		npmPkgs = append(npmPkgs, "semantic-release/gitlab@latest")
+		npmPkgs = append(npmPkgs, "@semantic-release/gitlab@latest")
 	case "bitbucket":
 		secretEnv = "BITBUCKET_TOKEN"
-		npmPkgs = append(npmPkgs, "semantic-release/bitbucket@latest")
+		npmPkgs = append(npmPkgs, "@semantic-release/bitbucket@latest")
 	default:
 		err = fmt.Errorf("ERROR: unsupporteed platform, can't run semantic release. Supplieed platform: '%s' ", platform)
 		return
@@ -56,7 +56,7 @@ func RunSemanticRelease(repoDir *dagger.Directory, platform string, c *dagger.Cl
 		WithExec([]string{"apk update"}).
 		WithExec([]string{"apk add git git-lfs"})
 	for _, pkg := range npmPkgs {
-		cSemantic = cSemantic.WithExec([]string{fmt.Sprintf("npm install -g @%s", pkg)})
+		cSemantic = cSemantic.WithExec([]string{fmt.Sprintf("npm install -g %s", pkg)})
 	}
 	cSemantic = cSemantic.
 		WithMountedDirectory("/WORK/repo", repoDir).

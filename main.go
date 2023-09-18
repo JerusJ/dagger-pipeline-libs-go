@@ -13,6 +13,7 @@ import (
 var (
 	flagAll       = flag.Bool("all", false, "")
 	flagContainer = flag.Bool("containers", false, "")
+	flagRelease   = flag.Bool("release", false, "")
 )
 
 func main() {
@@ -37,6 +38,13 @@ func runPipelines(ctx context.Context) (err error) {
 	if *flagContainer || *flagAll {
 		eg.Go(func() error {
 			return runContainerPipeline(c, gctx)
+		})
+	}
+
+	if *flagRelease || *flagAll {
+		repoDir := c.Host().Directory(".", dagger.HostDirectoryOpts{Include: []string{".git", ".releaserc.json"}})
+		eg.Go(func() error {
+			return RunSemanticRelease(repoDir, "github", c, gctx)
 		})
 	}
 
