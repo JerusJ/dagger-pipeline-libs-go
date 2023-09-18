@@ -1,6 +1,10 @@
 name: Build, Scan, and Push
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - main
+      - master
 
 jobs:
   build_scan_push:
@@ -8,7 +12,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Dagger Install
-        run: "curl -L https://dl.dagger.io/dagger/install.sh | sudo BIN_DIR=/usr/local/bin DAGGER_VERSION=0.8.4 sh"
-      - name: Dagger Build
-        run: ./run_ci.sh -all
+      - uses: actions/setup-go@v4
+        with:
+          go-version: ">=1.20.0"
+      - name: Run Dagger Go Pipeline
+        run: go run . -all
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
