@@ -1,0 +1,14 @@
+name: Build, Scan, and Push
+
+on: [push, pull_request]
+
+jobs:
+  build_scan_push:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Dagger Install
+        run: "curl -L https://dl.dagger.io/dagger/install.sh | sudo BIN_DIR=/usr/local/bin DAGGER_VERSION=0.8.4 sh"
+      - name: Dagger Build
+        run: ./run_ci.sh -all

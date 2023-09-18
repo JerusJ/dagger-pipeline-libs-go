@@ -1,4 +1,4 @@
-package pipeline
+package main
 
 import (
 	"context"
@@ -11,7 +11,8 @@ import (
 )
 
 var (
-	flagContainer = flag.Bool("containers", true, "")
+	flagAll       = flag.Bool("all", false, "")
+	flagContainer = flag.Bool("containers", false, "")
 )
 
 func main() {
@@ -21,8 +22,11 @@ func main() {
 }
 
 func runPipelines(ctx context.Context) (err error) {
+	flag.Parse()
+
 	// initialize Dagger client
 	c, err := dagger.Connect(ctx, dagger.WithLogOutput(os.Stderr))
+
 	if err != nil {
 		return
 	}
@@ -30,7 +34,7 @@ func runPipelines(ctx context.Context) (err error) {
 
 	eg, gctx := errgroup.WithContext(ctx)
 
-	if *flagContainer {
+	if *flagContainer || *flagAll {
 		eg.Go(func() error {
 			return runContainerPipeline(c, gctx)
 		})

@@ -1,8 +1,9 @@
-package pipeline
+package main
 
 import (
 	"context"
 	"fmt"
+	"log"
 	"path/filepath"
 	"strings"
 
@@ -12,16 +13,17 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func GetGitTags(repoURL, destDir string, container *dagger.Container, c *dagger.Client, ctx context.Context) (tags []string, err error) {
-	cloneRoot := "/REPOS"
-	repoRoot := filepath.Join(cloneRoot, destDir)
+func GetGitTags(repoURL, ref string, container *dagger.Container, c *dagger.Client, ctx context.Context) (tags []string, err error) {
+	project := c.Git(repoURL, dagger.GitOpts{KeepGitDir: true}).Branch(ref).Tree()
 
 	output, err := container.
-		WithExec([]string{fmt.Sprintf("git clone %s %s || cd %s && git pull", repoURL, repoRoot, repoRoot)}).
-		WithWorkdir(repoRoot).
-		WithExec([]string{"git tag -l v* --sort v:refname"}).
+		WithMountedDirectory("/REPO", project).
+		WithWorkdir("/REPO").
+		WithExec([]string{"git", "fetch", "--tags"}).
+		WithExec([]string{"git", "tag", "-l", "v*", "--sort", "v:refname"}).
 		Stdout(ctx)
 	if err != nil {
+		err = fmt.Errorf("ERROR: could not get repository: %s; reason: %s", repoURL, err)
 		return
 	}
 
@@ -36,45 +38,43 @@ func GetGitTags(repoURL, destDir string, container *dagger.Container, c *dagger.
 	return
 }
 
-func GetLatestGitTag(repoURL, destDir string, container *dagger.Container, c *dagger.Client, ctx context.Context) (tag string, err error) {
-	tags, err := GetGitTags(repoURL, destDir, container, c, ctx)
+func GetLatestGitTag(repoURL, ref string, container *dagger.Container, c *dagger.Client, ctx context.Context) (tag string, err error) {
+	tags, err := GetGitTags(repoURL, ref, container, c, ctx)
 	if err != nil {
 		return
 	}
-	fmt.Println(tags)
+	log.Println(tags)
 	tag = tags[len(tags)-1]
 	return
 }
 
 func BuildK8SUtils(c *dagger.Client, ctx context.Context) (err error) {
-	cloneRoot := "/REPOS"
 	baseContainer := c.Container().From("docker.io/alpine:3.17.3")
-	gitContainer := c.Container().From("docker.io/alpine/git:2.36.3").
-		WithDirectory(cloneRoot, c.Directory()).
-		WithMountedCache(cloneRoot, c.CacheVolume("repo_cache")).
-		WithWorkdir(cloneRoot).
-		WithEntrypoint([]string{"/bin/sh", "-c"})
+	gitContainer := c.Container().From("docker.io/alpine/git:2.36.3").WithEntrypoint([]string{})
+
 	openshiftTags := []string{}
 	k8sTags := []string{}
 	sameTags := []string{}
+
 	vKustomize := "v5.0.1"
 	vHelm := ""
 
 	gitOCPRepo := "https://github.com/openshift/kubernetes.git"
 	gitK8SRepo := "https://github.com/kubernetes/kubernetes.git"
+	gitHelmRepo := "https://github.com/helm/helm.git"
 
 	eg, gctx := errgroup.WithContext(ctx)
 
 	eg.Go(func() error {
-		openshiftTags, err = GetGitTags(gitOCPRepo, "openshift-kubernetes", gitContainer, c, gctx)
+		openshiftTags, err = GetGitTags(gitOCPRepo, "master", gitContainer, c, gctx)
 		return err
 	})
 	eg.Go(func() error {
-		k8sTags, err = GetGitTags(gitK8SRepo, "kubernetes", gitContainer, c, gctx)
+		k8sTags, err = GetGitTags(gitK8SRepo, "master", gitContainer, c, gctx)
 		return err
 	})
 	eg.Go(func() error {
-		vHelm, err = GetLatestGitTag("https://github.com/helm/helm", "helm", gitContainer, c, gctx)
+		vHelm, err = GetLatestGitTag(gitHelmRepo, "main", gitContainer, c, gctx)
 		return err
 	})
 
@@ -93,9 +93,9 @@ func BuildK8SUtils(c *dagger.Client, ctx context.Context) (err error) {
 		}
 	}
 
-	fmt.Println("Openshift Tags:", openshiftTags)
-	fmt.Println("K8S Tags:", k8sTags)
-	fmt.Println("Same Tags:", sameTags)
+	log.Println("Openshift Tags:", openshiftTags)
+	log.Println("K8S Tags:", k8sTags)
+	log.Println("Same Tags:", sameTags)
 
 	baseContainer = baseContainer.
 		WithMountedDirectory("/download", c.Directory()).
@@ -123,7 +123,6 @@ type ContainerBuilder struct {
 }
 
 func buildK8SUtil(vK8S, vKustomize, vHelm string, baseContainer *dagger.Container, c *dagger.Client, ctx context.Context) (container *dagger.Container, err error) {
-	binPath := "/usr/local/bin"
 	containerBuilds := []ContainerBuilder{
 		{
 			URL:          fmt.Sprintf("https://dl.k8s.io/release/%s/bin/linux/amd64/kubectl", vK8S),
@@ -133,30 +132,16 @@ func buildK8SUtil(vK8S, vKustomize, vHelm string, baseContainer *dagger.Containe
 			URL:          "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2F" + fmt.Sprintf("%s/kustomize_%s_linux_amd64.tar.gz", vKustomize, vKustomize),
 			CheckCommand: []string{"kustomize", "version"},
 		},
-		{
-
-			URL:          fmt.Sprintf("https://get.helm.sh/helm-%s-linux-amd64.tar.gz", vHelm),
-			CheckCommand: []string{"helm", "version"},
-		},
 	}
 
-	container = baseContainer.WithEntrypoint([]string{})
+	baseContainer = baseContainer.WithEntrypoint([]string{})
 	for _, build := range containerBuilds {
-		fName := filepath.Base(build.URL)
-		ext := filepath.Ext(build.URL)
-		tmpDest := filepath.Join("/download", fName)
-
-		switch {
-		case ext == ".gz":
-			container = withDownloadFile(build.URL, tmpDest, container)
-			container = container.WithExec([]string{"tar", "-xzf", tmpDest, "-C", "/usr/local/bin"})
-		case ext == "":
-			container = container.WithFile(filepath.Join(binPath, filepath.Base(build.URL)), c.HTTP(build.URL), dagger.ContainerWithFileOpts{Permissions: 0750})
-		default:
-			err = fmt.Errorf("Unsupported container extension: %s", ext)
+		baseContainer, err = ContainerWithBinary(c, baseContainer, build.URL)
+		if err != nil {
+			return container, err
 		}
 
-		_, err = container.WithExec(build.CheckCommand).Stderr(ctx)
+		_, err = baseContainer.WithExec(build.CheckCommand).Stderr(ctx)
 		if err != nil {
 			return container, err
 		}
@@ -165,7 +150,7 @@ func buildK8SUtil(vK8S, vKustomize, vHelm string, baseContainer *dagger.Containe
 	return
 }
 
-func withDownloadFile(url, dest string, c *dagger.Container) *dagger.Container {
+func ContainerWithDownloadFile(url, dest string, c *dagger.Container) *dagger.Container {
 	return c.WithExec([]string{
 		"curl",
 		"--progress-bar",
@@ -176,5 +161,22 @@ func withDownloadFile(url, dest string, c *dagger.Container) *dagger.Container {
 		url,
 		"-o", dest,
 	})
+}
 
+func ContainerWithBinary(c *dagger.Client, container *dagger.Container, downloadURL string) (*dagger.Container, error) {
+	fName := filepath.Base(downloadURL)
+	tmpDest := filepath.Join("/download", fName)
+	binPath := "/usr/local/bin"
+
+	switch filepath.Ext(downloadURL) {
+	case ".gz":
+		container = ContainerWithDownloadFile(downloadURL, tmpDest, container)
+		container = container.WithExec([]string{"tar", "-xzf", tmpDest, "-C", "/usr/local/bin"})
+	case "":
+		container = container.WithFile(filepath.Join(binPath, fName), c.HTTP(downloadURL), dagger.ContainerWithFileOpts{Permissions: 0750})
+	default:
+		return container, fmt.Errorf("ERROR: unsupported container extension for file: %s", fName)
+	}
+
+	return container, nil
 }
