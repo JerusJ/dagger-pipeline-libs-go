@@ -5,6 +5,7 @@ import (
 	"flag"
 	"log"
 	"os"
+	"path/filepath"
 
 	"dagger.io/dagger"
 	"golang.org/x/sync/errgroup"
@@ -22,6 +23,15 @@ func main() {
 	if err := runPipelines(context.Background()); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func getParentDir() string {
+	wd, err := os.Getwd()
+	if err != nil {
+		log.Fatalf("ERROR: could not get working dir: %s", err)
+	}
+	parentDir := filepath.Dir(wd)
+	return parentDir
 }
 
 func runPipelines(ctx context.Context) (err error) {
@@ -44,7 +54,8 @@ func runPipelines(ctx context.Context) (err error) {
 	}
 
 	if *flagRelease || *flagAll {
-		repoDir := c.Host().Directory(".", dagger.HostDirectoryOpts{Include: []string{".git", ".releaserc.json"}})
+		parentDir := getParentDir()
+		repoDir := c.Host().Directory(parentDir, dagger.HostDirectoryOpts{Include: []string{".git", ".releaserc.json"}})
 		eg.Go(func() error {
 			return pipeline.RunSemanticRelease(repoDir, "github", c, gctx)
 		})

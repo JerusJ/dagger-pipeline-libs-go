@@ -56,15 +56,14 @@ func RunSemanticRelease(repoDir *dagger.Directory, platform string, c *dagger.Cl
 		WithEntrypoint([]string{"sh", "-c"}).
 		WithMountedCache("/var/cache/apk", c.CacheVolume("apk_cache")).
 		WithExec([]string{"apk update"}).
-		WithExec([]string{"apk add git git-lfs"})
-	for _, pkg := range npmPkgs {
-		cSemantic = cSemantic.WithExec([]string{fmt.Sprintf("npm install -g %s", pkg)})
-	}
-	cSemantic = cSemantic.
+		WithExec([]string{"apk add git git-lfs"}).
 		WithMountedDirectory("/WORK/repo", repoDir).
 		WithEnvVariable(secretEnv, token).
 		WithEnvVariable("CI", ciEnv).
 		WithWorkdir("/WORK/repo")
+	for _, pkg := range npmPkgs {
+		cSemantic = cSemantic.WithExec([]string{fmt.Sprintf("npm install -g %s", pkg)})
+	}
 
 	// Run Release
 	if isDryRun {
