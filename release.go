@@ -23,6 +23,8 @@ func RunSemanticRelease(repoDir *dagger.Directory, platform string, c *dagger.Cl
 	secretEnv := ""
 	switch platform {
 	case "github":
+		// NOTE, see: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository#setting-the-permissions-of-the-github_token-for-your-repository
+		// The default GITHUB_TOKEN generated in CI only has 'read' access, thus Semantic Release will fail.
 		secretEnv = "GITHUB_TOKEN"
 		npmPkgs = append(npmPkgs, "@semantic-release/github@latest")
 	case "gitlab":
