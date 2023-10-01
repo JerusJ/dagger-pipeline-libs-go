@@ -34,7 +34,7 @@ func RunSemanticRelease(repoDir *dagger.Directory, platform string, c *dagger.Cl
 		secretEnv = "BITBUCKET_TOKEN"
 		npmPkgs = append(npmPkgs, "@semantic-release/bitbucket@latest")
 	default:
-		err = fmt.Errorf("ERROR: unsupporteed platform, can't run semantic release. Supplieed platform: '%s' ", platform)
+		err = fmt.Errorf("ERROR: unsupported platform, can't run semantic release. Supplied platform: '%s' ", platform)
 		return
 	}
 

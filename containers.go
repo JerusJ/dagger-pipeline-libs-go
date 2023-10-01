@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"path/filepath"
 	"strings"
 
 	"dagger.io/dagger"
@@ -111,13 +110,8 @@ func BuildK8SUtils(c *dagger.Client, ctx context.Context) (err error) {
 	return
 }
 
-type ContainerBuilder struct {
-	URL          string
-	CheckCommand []string
-}
-
 func buildK8SUtil(vK8S, vKustomize, vHelm string, baseContainer *dagger.Container, c *dagger.Client, ctx context.Context) (container *dagger.Container, err error) {
-	containerBuilds := []ContainerBuilder{
+	containerBuilds := []BinaryBuilder{
 		{
 			URL:          fmt.Sprintf("https://dl.k8s.io/release/%s/bin/linux/amd64/kubectl", vK8S),
 			CheckCommand: []string{"kubectl", "version", "--client"},
@@ -129,48 +123,6 @@ func buildK8SUtil(vK8S, vKustomize, vHelm string, baseContainer *dagger.Containe
 	}
 
 	baseContainer = baseContainer.WithEntrypoint([]string{})
-	for _, build := range containerBuilds {
-		baseContainer, err = ContainerWithBinary(c, baseContainer, build.URL)
-		if err != nil {
-			return container, err
-		}
-
-		_, err = baseContainer.WithExec(build.CheckCommand).Stderr(ctx)
-		if err != nil {
-			return container, err
-		}
-	}
-
+	container, err = WithBinaries(containerBuilds, baseContainer, c)
 	return
-}
-
-func ContainerWithDownloadFile(url, dest string, c *dagger.Container) *dagger.Container {
-	return c.WithExec([]string{
-		"curl",
-		"--progress-bar",
-		"--create-dirs",
-		"--connect-timeout", "30",
-		"--retry", "300",
-		"-fLk",
-		url,
-		"-o", dest,
-	})
-}
-
-func ContainerWithBinary(c *dagger.Client, container *dagger.Container, downloadURL string) (*dagger.Container, error) {
-	fName := filepath.Base(downloadURL)
-	tmpDest := filepath.Join("/download", fName)
-	binPath := "/usr/local/bin"
-
-	switch filepath.Ext(downloadURL) {
-	case ".gz":
-		container = ContainerWithDownloadFile(downloadURL, tmpDest, container)
-		container = container.WithExec([]string{"tar", "-xzf", tmpDest, "-C", "/usr/local/bin"})
-	case "":
-		container = container.WithFile(filepath.Join(binPath, fName), c.HTTP(downloadURL), dagger.ContainerWithFileOpts{Permissions: 0750})
-	default:
-		return container, fmt.Errorf("ERROR: unsupported container extension for file: %s", fName)
-	}
-
-	return container, nil
 }
