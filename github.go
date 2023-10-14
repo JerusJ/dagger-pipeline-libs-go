@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 
@@ -18,8 +18,7 @@ type GitHubActions struct {
 	Token  string
 }
 
-func NewGitHubActions(token string) *GitHubActions {
-	ctx := context.Background()
+func NewGitHubActions(ctx context.Context, token string) *GitHubActions {
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
 	tc := oauth2.NewClient(ctx, ts)
 	client := github.NewClient(tc)
@@ -47,11 +46,10 @@ func (gha *GitHubActions) UploadArtifact(ctx context.Context, repo string, runID
 	}
 	defer resp.Body.Close()
 
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, _ := io.ReadAll(resp.Body)
 	var response UploadUrlResponse
 	json.Unmarshal(body, &response)
 
-	// Upload artifact
 	zipData, err := os.ReadFile(artifactPath)
 	if err != nil {
 		return err
