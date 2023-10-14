@@ -2,23 +2,28 @@ module ci
 
 go 1.20
 
-replace (
-	github.com/jerusj/dagger-pipeline-libs-go/v2 => ../
+replace github.com/jerusj/dagger-pipeline-libs-go/v2 => ../
+
+require (
+	dagger.io/dagger v0.8.8
+	github.com/jerusj/dagger-pipeline-libs-go/v2 v2.0.0-20231010094419-6c4f2f03de40
+	golang.org/x/sync v0.4.0
 )
 
 require (
-	dagger.io/dagger v0.8.6
-	golang.org/x/sync v0.3.0
-)
-
-require (
-	github.com/99designs/gqlgen v0.17.36 // indirect
+	github.com/99designs/gqlgen v0.17.39 // indirect
 	github.com/Khan/genqlient v0.6.0 // indirect
 	github.com/adrg/xdg v0.4.0 // indirect
-	github.com/iancoleman/strcase v0.3.0 // indirect
-	github.com/jerusj/dagger-pipeline-libs-go/v2 v2.0.0-20230918211105-4dcd2170c890 // indirect
+	github.com/golang/protobuf v1.5.3 // indirect
+	github.com/google/go-github/v56 v56.0.0 // indirect
+	github.com/google/go-querystring v1.1.0 // indirect
+	github.com/google/uuid v1.3.1 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
-	github.com/vektah/gqlparser/v2 v2.5.8 // indirect
-	golang.org/x/mod v0.12.0 // indirect
-	golang.org/x/sys v0.12.0 // indirect
+	github.com/sosodev/duration v1.2.0 // indirect
+	github.com/vektah/gqlparser/v2 v2.5.10 // indirect
+	golang.org/x/mod v0.13.0 // indirect
+	golang.org/x/oauth2 v0.13.0 // indirect
+	golang.org/x/sys v0.13.0 // indirect
+	google.golang.org/appengine v1.6.8 // indirect
+	google.golang.org/protobuf v1.31.0 // indirect
 )
