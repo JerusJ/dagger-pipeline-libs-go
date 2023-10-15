@@ -4,13 +4,19 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/google/go-github/v56/github"
 	"golang.org/x/oauth2"
+)
+
+var (
+	ErrNoOpenPullRequests = errors.New("ERROR: No open pull requests found for branch.")
 )
 
 type GitHubActions struct {
@@ -103,6 +109,47 @@ func (gha *GitHubActions) DownloadArtifact(ctx context.Context, owner string, re
 
 	_, err = io.Copy(out, resp.Body)
 	return err
+}
+
+func (gha *GitHubActions) CommentOrUpdatePR(ctx context.Context, owner string, repo string, prNumber int, newComment string, identifier string) error {
+	// List comments on the PR
+	comments, _, err := gha.Client.Issues.ListComments(ctx, owner, repo, prNumber, nil)
+	if err != nil {
+		return err
+	}
+
+	// Check for an existing comment with the identifier
+	for _, comment := range comments {
+		if strings.Contains(comment.GetBody(), identifier) {
+			// Update the existing comment
+			comment.Body = &newComment
+			_, _, err := gha.Client.Issues.EditComment(ctx, owner, repo, *comment.ID, comment)
+			return err
+		}
+	}
+
+	// Create a new comment if no existing comment is found
+	_, _, err = gha.Client.Issues.CreateComment(ctx, owner, repo, prNumber, &github.IssueComment{Body: &newComment})
+	return err
+}
+
+func (gha *GitHubActions) GetOpenPullRequestIDForBranch(ctx context.Context, owner string, repo string, branch string) (int, error) {
+	opts := &github.PullRequestListOptions{
+		State: "open",
+	}
+
+	pulls, _, err := gha.Client.PullRequests.List(ctx, owner, repo, opts)
+	if err != nil {
+		return 0, err
+	}
+
+	for _, pull := range pulls {
+		if *pull.Head.Ref == branch {
+			return *pull.Number, nil
+		}
+	}
+
+	return 0, ErrNoOpenPullRequests
 }
 
 func AddGithubOutputShell(name, value string) {
