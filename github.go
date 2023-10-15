@@ -105,6 +105,11 @@ func (gha *GitHubActions) DownloadArtifact(ctx context.Context, owner string, re
 	return err
 }
 
+func AddGithubOutputShell(name, value string) {
+	cmd := fmt.Sprintf("::set-output name=%s::%s", name, value)
+	fmt.Fprintln(os.Stdout, cmd)
+}
+
 func IsPullRequest() bool {
 	eventName := os.Getenv("GITHUB_EVENT_NAME")
 	headRef := os.Getenv("GITHUB_HEAD_REF")
