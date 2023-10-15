@@ -72,6 +72,39 @@ func (gha *GitHubActions) UploadArtifact(ctx context.Context, repo string, runID
 	return nil
 }
 
+func (gha *GitHubActions) DownloadArtifact(ctx context.Context, repo string, runID int64, artifactName string, destination string) error {
+	artifacts, _, err := gha.Client.Actions.ListArtifacts(ctx, repo, runID, nil)
+	if err != nil {
+		return err
+	}
+
+	var artifact *github.Artifact
+	for _, a := range artifacts.Artifacts {
+		if a.GetName() == artifactName {
+			artifact = a
+			break
+		}
+	}
+
+	if artifact == nil {
+		return fmt.Errorf("Artifact %s not found", artifactName)
+	}
+	reader, url, err := gha.Client.Actions.DownloadArtifact(ctx, repo, *artifact.ID, false)
+	if err != nil {
+		return err
+	}
+	defer reader.Close()
+
+	out, err := os.Create(destination)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, reader)
+	return err
+}
+
 func IsPullRequest() bool {
 	eventName := os.Getenv("GITHUB_EVENT_NAME")
 	headRef := os.Getenv("GITHUB_HEAD_REF")
