@@ -4,9 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 	"path/filepath"
-	"strings"
 
 	"dagger.io/dagger"
 )
@@ -181,17 +179,4 @@ func ContainerWithBinaryAtPath(c *dagger.Client, container *dagger.Container, do
 	}
 
 	return container, nil
-}
-
-func getLinesFromFile(p string) []string {
-	f, err := os.ReadFile("test/python-versions")
-	if err != nil {
-		log.Fatalf("ERROR: cannot get lines from file: %s", err)
-	}
-	fLines := strings.Split(string(f), "\n")
-	// Truncate trailing newline
-	if fLines[len(fLines)] == "\n" {
-		fLines = fLines[:len(fLines)-1]
-	}
-	return fLines
 }

@@ -11,7 +11,7 @@ import (
 	"dagger.io/dagger"
 	"golang.org/x/sync/errgroup"
 
-	pipeline "github.com/jerusj/dagger-pipeline-libs-go/v2"
+	pipeline "github.com/jerusj/go-pipeline/v2"
 )
 
 var (
