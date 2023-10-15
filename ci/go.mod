@@ -2,11 +2,11 @@ module ci
 
 go 1.20
 
-replace github.com/jerusj/dagger-pipeline-libs-go/v2 => ../
+replace github.com/jerusj/go-pipeline/v2 => ../
 
 require (
 	dagger.io/dagger v0.8.8
-	github.com/jerusj/dagger-pipeline-libs-go/v2 v2.0.0-20231010094419-6c4f2f03de40
+	github.com/jerusj/go-pipeline/v2 v2.0.0-20231010094419-6c4f2f03de40
 	golang.org/x/sync v0.4.0
 )
 
