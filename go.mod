@@ -1,4 +1,4 @@
-module github.com/jerusj/dagger-pipeline-libs-go/v2
+module github.com/jerusj/go-pipeline/v2
 
 go 1.20
 
