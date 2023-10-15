@@ -12,7 +12,7 @@ import (
 
 func WithHostEnvVariablesMatchingPrefix(ctx context.Context, ctr *dagger.Container, prefix string, ignore ...string) *dagger.Container {
 	// convert ignore list to a map for faster lookup
-	ignoreMap := sliceToKeyMap(ignore)
+	ignoreMap := SliceToKeyMap(ignore)
 
 	envAll := os.Environ()
 	for _, env := range envAll {
