@@ -72,8 +72,8 @@ func (gha *GitHubActions) UploadArtifact(ctx context.Context, repo string, runID
 	return nil
 }
 
-func (gha *GitHubActions) DownloadArtifact(ctx context.Context, repo string, runID int64, artifactName string, destination string) error {
-	artifacts, _, err := gha.Client.Actions.ListArtifacts(ctx, repo, runID, nil)
+func (gha *GitHubActions) DownloadArtifact(ctx context.Context, owner string, repo string, runID int64, artifactName string, destination string) error {
+	artifacts, _, err := gha.Client.Actions.ListArtifacts(ctx, owner, repo, &github.ListOptions{})
 	if err != nil {
 		return err
 	}
@@ -89,11 +89,11 @@ func (gha *GitHubActions) DownloadArtifact(ctx context.Context, repo string, run
 	if artifact == nil {
 		return fmt.Errorf("Artifact %s not found", artifactName)
 	}
-	reader, url, err := gha.Client.Actions.DownloadArtifact(ctx, repo, *artifact.ID, false)
+	_, resp, err := gha.Client.Actions.DownloadArtifact(ctx, owner, repo, *artifact.ID, 3)
 	if err != nil {
 		return err
 	}
-	defer reader.Close()
+	defer resp.Body.Close()
 
 	out, err := os.Create(destination)
 	if err != nil {
@@ -101,7 +101,7 @@ func (gha *GitHubActions) DownloadArtifact(ctx context.Context, repo string, run
 	}
 	defer out.Close()
 
-	_, err = io.Copy(out, reader)
+	_, err = io.Copy(out, resp.Body)
 	return err
 }
 
