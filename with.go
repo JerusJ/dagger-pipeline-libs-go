@@ -109,9 +109,7 @@ func WithTerraform(version string, container *dagger.Container, c *dagger.Client
 		log.Fatal(err)
 	}
 
-	cTf = cTf.
-		WithEnvVariable("TF_PLUGIN_CACHE_DIR", "/TF_PLUGIN_CACHE_DIR").
-		WithMountedCache("/TF_PLUGIN_CACHE_DIR", c.CacheVolume("TF_PLUGIN_CACHE_DIR"))
+	cTf = cTf.WithEnvVariable("TF_IN_AUTOMATION", "1")
 
 	return cTf
 }
