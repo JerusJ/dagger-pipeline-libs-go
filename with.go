@@ -14,6 +14,8 @@ import (
 // See: https://github.com/actions/setup-python/blob/main/src/install-python.ts
 // and, for building: https://devguide.python.org/getting-started/setup-building/index.html#linux
 func WithPythonFromSource(version string, platform string, container *dagger.Container, c *dagger.Client, ctx context.Context) *dagger.Container {
+	c = c.Pipeline("With").Pipeline("Python").Pipeline(version)
+
 	gitPythonUrl := "https://github.com/python/cpython"
 	gitPython := c.Git(gitPythonUrl, dagger.GitOpts{KeepGitDir: false}).Branch(version).Tree()
 
@@ -85,6 +87,8 @@ func WithPythonFromSource(version string, platform string, container *dagger.Con
 }
 
 func WithGo(version string, container *dagger.Container, c *dagger.Client, ctx context.Context) *dagger.Container {
+	c = c.Pipeline("With").Pipeline("Go").Pipeline(version)
+
 	goURL := fmt.Sprintf("https://go.dev/dl/go%s.linux-amd64.tar.gz", version)
 	cGo, err := ContainerWithBinaryAtPath(c, container, goURL, "/usr/local")
 	if err != nil {
@@ -103,6 +107,8 @@ func WithGo(version string, container *dagger.Container, c *dagger.Client, ctx c
 }
 
 func WithTerraform(version string, container *dagger.Container, c *dagger.Client, ctx context.Context) *dagger.Container {
+	c = c.Pipeline("With").Pipeline("Terraform").Pipeline(version)
+
 	tfURL := fmt.Sprintf("https://releases.hashicorp.com/terraform/%s/terraform_%s_linux_amd64.zip", version, version)
 	cTf, err := ContainerWithBinary(c, container, tfURL)
 	if err != nil {
@@ -133,6 +139,8 @@ func WithBinaries(binaries []BinaryBuilder, container *dagger.Container, c *dagg
 }
 
 func WithKustomize(version string, container *dagger.Container, c *dagger.Client) *dagger.Container {
+	c = c.Pipeline("With").Pipeline("Kustomize").Pipeline(version)
+
 	kubectlURL := fmt.Sprintf("https://dl.k8s.io/release/%s/bin/linux/amd64/kubectl", version)
 	cKubectl, err := ContainerWithBinary(c, container, kubectlURL)
 	if err != nil {

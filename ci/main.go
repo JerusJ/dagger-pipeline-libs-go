@@ -73,6 +73,8 @@ func runPipelines(ctx context.Context) (err error) {
 }
 
 func runSetupPipeline(c *dagger.Client, ctx context.Context) (err error) {
+	c = c.Pipeline("Setup")
+
 	eg, gctx := errgroup.WithContext(ctx)
 	cAlpine := c.Container().From("alpine:latest").WithExec([]string{"apk", "add", "curl", "file", "unzip"})
 	cUbuntu := c.Container().From("ubuntu:latest").
@@ -125,6 +127,8 @@ func runSetupPipeline(c *dagger.Client, ctx context.Context) (err error) {
 }
 
 func runContainerPipeline(c *dagger.Client, ctx context.Context) (err error) {
+	c = c.Pipeline("Container")
+
 	eg, gctx := errgroup.WithContext(ctx)
 
 	eg.Go(func() error {

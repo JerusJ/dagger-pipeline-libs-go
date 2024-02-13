@@ -10,6 +10,8 @@ import (
 
 // For config, see: https://github.com/semantic-release/semantic-release/blob/master/docs/usage/ci-configuration.md
 func RunSemanticRelease(repoDir *dagger.Directory, platform string, c *dagger.Client, ctx context.Context) (err error) {
+	c = c.Pipeline("Semantic Release")
+
 	imageNode := "docker.io/node:20.6.1-alpine3.18"
 	npmPkgs := []string{
 		"semantic-release@v22.0.0",
